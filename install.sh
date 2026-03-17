@@ -138,6 +138,7 @@ install_oh_my_zsh_if_needed
 
 backup_and_link "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
 backup_and_link "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+backup_and_link "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
 
 if [[ "$SHELL" != *"zsh" ]]; then
   echo "[hint] current login shell is not zsh"

@@ -1,0 +1,59 @@
+[user]
+	name = Kunshang Ji
+	email = kunshang.ji@intel.com
+
+[credential]
+	helper = store
+
+[core]
+	editor = vim
+
+[init]
+	defaultBranch = main
+
+[fetch]
+	prune = true
+
+[pull]
+	ff = only
+	rebase = false
+
+[rebase]
+	autoStash = true
+	autoSquash = true
+
+[merge]
+	conflictStyle = zdiff3
+
+[rerere]
+	enabled = true
+
+[color]
+	ui = auto
+
+[alias]
+	co = checkout
+	st = status -sb
+	br = branch
+	cp = cherry-pick
+	ci = commit
+	ca = commit --amend
+	cam = commit -am
+	aa = add --all
+	df = diff
+	dc = diff --cached
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lga = log --graph --oneline --decorate --all
+	last = log -1 HEAD --stat
+	undo = reset --soft HEAD~1
+	pl = pull --rebase --autostash
+	pf = push --force-with-lease
+	sw = switch
+	swn = switch -c
+	unstage = restore --staged --
+
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
