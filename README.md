@@ -48,7 +48,10 @@ exec zsh
 
 ## Notes
 
-- `install.sh` auto-detects macOS/Ubuntu and installs missing deps (`zsh`, `tmux`, `curl`, `git`).
+- `install.sh` auto-detects macOS/Ubuntu and installs missing deps.
+- Requested packages are included on Ubuntu: `vim git wget curl net-tools sudo python3-dev` (plus `zsh` and `tmux`).
+- On macOS, equivalent tools are installed via Homebrew (for `net-tools`, it installs `inetutils` if needed).
+- `install.sh` installs `uv` via: `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 - `install.sh` installs `oh-my-zsh` if missing.
 - Existing `~/.zshrc` and `~/.tmux.conf` are backed up automatically (timestamped) before replacing.
 - This framework intentionally stays lightweight so you can grow it gradually.

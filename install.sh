@@ -31,8 +31,15 @@ install_deps() {
       local packages=()
       command -v zsh >/dev/null 2>&1 || packages+=(zsh)
       command -v tmux >/dev/null 2>&1 || packages+=(tmux)
-      command -v curl >/dev/null 2>&1 || packages+=(curl)
+      command -v vim >/dev/null 2>&1 || packages+=(vim)
       command -v git >/dev/null 2>&1 || packages+=(git)
+      command -v wget >/dev/null 2>&1 || packages+=(wget)
+      command -v curl >/dev/null 2>&1 || packages+=(curl)
+      command -v python3 >/dev/null 2>&1 || packages+=(python)
+
+      if ! command -v ifconfig >/dev/null 2>&1; then
+        packages+=(inetutils)
+      fi
 
       if [[ ${#packages[@]} -gt 0 ]]; then
         echo "[install] macOS deps via Homebrew: ${packages[*]}"
@@ -44,10 +51,15 @@ install_deps() {
 
     ubuntu)
       local packages=()
-      command -v zsh >/dev/null 2>&1 || packages+=(zsh)
-      command -v tmux >/dev/null 2>&1 || packages+=(tmux)
-      command -v curl >/dev/null 2>&1 || packages+=(curl)
-      command -v git >/dev/null 2>&1 || packages+=(git)
+      dpkg -s zsh >/dev/null 2>&1 || packages+=(zsh)
+      dpkg -s tmux >/dev/null 2>&1 || packages+=(tmux)
+      dpkg -s vim >/dev/null 2>&1 || packages+=(vim)
+      dpkg -s git >/dev/null 2>&1 || packages+=(git)
+      dpkg -s wget >/dev/null 2>&1 || packages+=(wget)
+      dpkg -s curl >/dev/null 2>&1 || packages+=(curl)
+      dpkg -s net-tools >/dev/null 2>&1 || packages+=(net-tools)
+      dpkg -s sudo >/dev/null 2>&1 || packages+=(sudo)
+      dpkg -s python3-dev >/dev/null 2>&1 || packages+=(python3-dev)
 
       if [[ ${#packages[@]} -gt 0 ]]; then
         echo "[install] Ubuntu deps via apt: ${packages[*]}"
@@ -68,6 +80,16 @@ install_deps() {
       exit 1
       ;;
   esac
+}
+
+install_uv_if_needed() {
+  if command -v uv >/dev/null 2>&1; then
+    echo "[ok] uv already installed"
+    return
+  fi
+
+  echo "[install] uv"
+  curl -LsSf https://astral.sh/uv/install.sh | sh
 }
 
 install_zsh_if_needed() {
@@ -111,6 +133,7 @@ echo "Detected OS: $OS"
 install_deps "$OS"
 
 install_zsh_if_needed
+install_uv_if_needed
 install_oh_my_zsh_if_needed
 
 backup_and_link "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
