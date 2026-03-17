@@ -1,0 +1,3 @@
+# Local secret env file (do not commit)
+zsh/.zsh_secrets
+.zsh_secrets

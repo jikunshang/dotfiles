@@ -28,5 +28,6 @@ fi
 DOTFILES_ZSH_DIR="${${(%):-%N}:A:h}"
 
 [[ -f "$DOTFILES_ZSH_DIR/exports.zsh" ]] && source "$DOTFILES_ZSH_DIR/exports.zsh"
+[[ -f "$HOME/.zsh_secrets" ]] && source "$HOME/.zsh_secrets"
 [[ -f "$DOTFILES_ZSH_DIR/aliases.zsh" ]] && source "$DOTFILES_ZSH_DIR/aliases.zsh"
 [[ -f "$DOTFILES_ZSH_DIR/functions.zsh" ]] && source "$DOTFILES_ZSH_DIR/functions.zsh"

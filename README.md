@@ -16,6 +16,7 @@ A minimal, extensible dotfiles framework for macOS and Ubuntu development, inclu
 │   └── .gitconfig
 ├── zsh
 │   ├── .zshrc
+│   ├── .zsh_secrets.example
 │   ├── aliases.zsh
 │   ├── exports.zsh
 │   └── functions.zsh
@@ -45,6 +46,7 @@ exec zsh
 
 - Add aliases in `zsh/aliases.zsh`
 - Add environment variables in `zsh/exports.zsh`
+- Put private tokens/proxy values in `~/.zsh_secrets` (template: `zsh/.zsh_secrets.example`)
 - Add shell functions in `zsh/functions.zsh`
 - Add git aliases/settings in `git/.gitconfig`
 - Tune terminal multiplexing in `tmux/.tmux.conf`
@@ -56,6 +58,7 @@ exec zsh
 - On macOS, equivalent tools are installed via Homebrew (for `net-tools`, it installs `inetutils` if needed).
 - `install.sh` installs `uv` via: `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 - `install.sh` installs `oh-my-zsh` if missing.
+- `install.sh` creates `~/.zsh_secrets` from template when missing.
 - Existing `~/.zshrc` and `~/.tmux.conf` are backed up automatically (timestamped) before replacing.
 - Existing `~/.gitconfig` is also backed up automatically before replacing.
 - This framework intentionally stays lightweight so you can grow it gradually.

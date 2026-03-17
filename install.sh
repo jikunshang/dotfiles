@@ -112,6 +112,23 @@ install_oh_my_zsh_if_needed() {
   RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 }
 
+setup_zsh_secrets_if_needed() {
+  local target_file="$HOME/.zsh_secrets"
+  local template_file="$DOTFILES_DIR/zsh/.zsh_secrets.example"
+
+  if [[ -f "$target_file" ]]; then
+    echo "[ok] private env file already exists: $target_file"
+    return
+  fi
+
+  if [[ -f "$template_file" ]]; then
+    cp "$template_file" "$target_file"
+    chmod 600 "$target_file"
+    echo "[create] $target_file from template"
+    echo "[hint] edit $target_file and fill your real token/proxy values"
+  fi
+}
+
 backup_and_link() {
   local source_file="$1"
   local target_file="$2"
@@ -135,6 +152,7 @@ install_deps "$OS"
 install_zsh_if_needed
 install_uv_if_needed
 install_oh_my_zsh_if_needed
+setup_zsh_secrets_if_needed
 
 backup_and_link "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
 backup_and_link "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
