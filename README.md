@@ -31,6 +31,18 @@ cd ~/dev/dotfiles
 ./install.sh
 ```
 
+With tokens/proxy:
+
+```bash
+bash install.sh -g <GITHUB_TOKEN> -h <HF_TOKEN> -p <PROXY>
+```
+
+Install `uv` optionally:
+
+```bash
+bash install.sh -u
+```
+
 Supported systems:
 
 - macOS (via Homebrew)
@@ -57,9 +69,12 @@ exec zsh
 - Requested packages are included on Ubuntu: `vim git wget curl net-tools sudo python3-dev` (plus `zsh` and `tmux`).
 - Ubuntu install runs in non-interactive mode (`DEBIAN_FRONTEND=noninteractive`, `TZ=Etc/UTC`) to avoid timezone prompts.
 - On macOS, equivalent tools are installed via Homebrew (for `net-tools`, it installs `inetutils` if needed).
-- `install.sh` installs `uv` via: `curl -LsSf https://astral.sh/uv/install.sh | sh`.
+- `uv` installation is optional; enable with `-u`.
+- When enabled, `install.sh` installs `uv` via: `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 - `install.sh` installs `oh-my-zsh` if missing.
 - `install.sh` creates `~/.zsh_secrets` from template when missing.
+- `-g/-h/-p` writes values into `~/.zsh_secrets` automatically.
+- `-p` also applies proxy env for current install process (helps when network requires proxy and git is not installed yet).
 - Existing `~/.zshrc` and `~/.tmux.conf` are backed up automatically (timestamped) before replacing.
 - Existing `~/.gitconfig` is also backed up automatically before replacing.
 - This framework intentionally stays lightweight so you can grow it gradually.
