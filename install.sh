@@ -4,20 +4,80 @@ set -euo pipefail
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 
+detect_os() {
+  case "$(uname -s)" in
+    Darwin) echo "macos" ;;
+    Linux)
+      if [[ -f /etc/os-release ]] && grep -qi '^ID=ubuntu' /etc/os-release; then
+        echo "ubuntu"
+      else
+        echo "linux-unsupported"
+      fi
+      ;;
+    *) echo "unsupported" ;;
+  esac
+}
+
+install_deps() {
+  local os="$1"
+
+  case "$os" in
+    macos)
+      if ! command -v brew >/dev/null 2>&1; then
+        echo "[error] Homebrew is required on macOS: https://brew.sh"
+        exit 1
+      fi
+
+      local packages=()
+      command -v zsh >/dev/null 2>&1 || packages+=(zsh)
+      command -v tmux >/dev/null 2>&1 || packages+=(tmux)
+      command -v curl >/dev/null 2>&1 || packages+=(curl)
+      command -v git >/dev/null 2>&1 || packages+=(git)
+
+      if [[ ${#packages[@]} -gt 0 ]]; then
+        echo "[install] macOS deps via Homebrew: ${packages[*]}"
+        brew install "${packages[@]}"
+      else
+        echo "[ok] dependencies already installed"
+      fi
+      ;;
+
+    ubuntu)
+      local packages=()
+      command -v zsh >/dev/null 2>&1 || packages+=(zsh)
+      command -v tmux >/dev/null 2>&1 || packages+=(tmux)
+      command -v curl >/dev/null 2>&1 || packages+=(curl)
+      command -v git >/dev/null 2>&1 || packages+=(git)
+
+      if [[ ${#packages[@]} -gt 0 ]]; then
+        echo "[install] Ubuntu deps via apt: ${packages[*]}"
+        if command -v sudo >/dev/null 2>&1; then
+          sudo apt-get update
+          sudo apt-get install -y "${packages[@]}"
+        else
+          apt-get update
+          apt-get install -y "${packages[@]}"
+        fi
+      else
+        echo "[ok] dependencies already installed"
+      fi
+      ;;
+
+    *)
+      echo "[error] Unsupported OS. Supported: macOS, Ubuntu"
+      exit 1
+      ;;
+  esac
+}
+
 install_zsh_if_needed() {
   if command -v zsh >/dev/null 2>&1; then
     echo "[ok] zsh already installed"
     return
   fi
 
-  if command -v brew >/dev/null 2>&1; then
-    echo "[install] zsh via Homebrew"
-    brew install zsh
-  else
-    echo "[error] zsh not found and Homebrew is unavailable."
-    echo "        install Homebrew first: https://brew.sh"
-    exit 1
-  fi
+  echo "[error] zsh is still unavailable after dependency installation"
+  exit 1
 }
 
 install_oh_my_zsh_if_needed() {
@@ -44,6 +104,11 @@ backup_and_link() {
 }
 
 echo "Installing dotfiles from: $DOTFILES_DIR"
+
+OS="$(detect_os)"
+echo "Detected OS: $OS"
+
+install_deps "$OS"
 
 install_zsh_if_needed
 install_oh_my_zsh_if_needed

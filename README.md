@@ -1,6 +1,6 @@
 # Personal Dotfiles
 
-A minimal, extensible dotfiles framework for macOS development, including:
+A minimal, extensible dotfiles framework for macOS and Ubuntu development, including:
 
 - `zsh` setup
 - `oh-my-zsh` setup (`muse` theme)
@@ -28,6 +28,11 @@ cd ~/dev/dotfiles
 ./install.sh
 ```
 
+Supported systems:
+
+- macOS (via Homebrew)
+- Ubuntu (via apt)
+
 Then restart shell:
 
 ```bash
@@ -43,6 +48,7 @@ exec zsh
 
 ## Notes
 
-- `install.sh` installs `zsh` (if missing, via Homebrew) and installs `oh-my-zsh` (if missing).
+- `install.sh` auto-detects macOS/Ubuntu and installs missing deps (`zsh`, `tmux`, `curl`, `git`).
+- `install.sh` installs `oh-my-zsh` if missing.
 - Existing `~/.zshrc` and `~/.tmux.conf` are backed up automatically (timestamped) before replacing.
 - This framework intentionally stays lightweight so you can grow it gradually.
