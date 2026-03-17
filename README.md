@@ -72,6 +72,7 @@ exec zsh
 - `uv` installation is optional; enable with `-u`.
 - When enabled, `install.sh` installs `uv` via: `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 - `install.sh` installs `oh-my-zsh` if missing.
+- `install.sh` automatically switches your default login shell to `zsh`.
 - `install.sh` creates `~/.zsh_secrets` from template when missing.
 - `-g/-h/-p` writes values into `~/.zsh_secrets` automatically.
 - `-p` also applies proxy env for current install process (helps when network requires proxy and git is not installed yet).

@@ -273,6 +273,43 @@ backup_and_link() {
   echo "[link] $source_file -> $target_file"
 }
 
+get_current_login_shell() {
+  local current_shell=""
+
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v dscl >/dev/null 2>&1; then
+    current_shell="$(dscl . -read "/Users/$USER" UserShell 2>/dev/null | awk '{print $2}')"
+  elif command -v getent >/dev/null 2>&1; then
+    current_shell="$(getent passwd "$USER" | awk -F: '{print $7}')"
+  fi
+
+  if [[ -z "$current_shell" ]]; then
+    current_shell="${SHELL:-}"
+  fi
+
+  printf '%s' "$current_shell"
+}
+
+set_default_shell_to_zsh() {
+  local zsh_path
+  local current_shell
+
+  zsh_path="$(command -v zsh)"
+  current_shell="$(get_current_login_shell)"
+
+  if [[ "$current_shell" == "$zsh_path" ]]; then
+    echo "[ok] default shell already zsh: $zsh_path"
+    return
+  fi
+
+  echo "[set] changing default shell to zsh: $zsh_path"
+  if chsh -s "$zsh_path" "$USER"; then
+    echo "[ok] default shell changed to zsh"
+  else
+    echo "[warn] failed to change default shell automatically"
+    echo "       run manually: chsh -s $zsh_path"
+  fi
+}
+
 main() {
   parse_args "$@"
   apply_proxy_env_if_provided
@@ -300,10 +337,7 @@ main() {
   backup_and_link "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
   backup_and_link "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
 
-  if [[ "$SHELL" != *"zsh" ]]; then
-    echo "[hint] current login shell is not zsh"
-    echo "       run: chsh -s $(command -v zsh)"
-  fi
+  set_default_shell_to_zsh
 
   echo "Done. Restart shell with: exec zsh"
 }
