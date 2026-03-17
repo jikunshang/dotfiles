@@ -64,11 +64,13 @@ install_deps() {
       if [[ ${#packages[@]} -gt 0 ]]; then
         echo "[install] Ubuntu deps via apt: ${packages[*]}"
         if command -v sudo >/dev/null 2>&1; then
-          sudo apt-get update
-          sudo apt-get install -y "${packages[@]}"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata
+          sudo DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y "${packages[@]}"
         else
-          apt-get update
-          apt-get install -y "${packages[@]}"
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata
+          DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y "${packages[@]}"
         fi
       else
         echo "[ok] dependencies already installed"
