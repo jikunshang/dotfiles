@@ -1,0 +1,14 @@
+# Shared history seeds for zsh (one command per line)
+
+tmux new
+tmux a -t xxx
+tmux
+vllm bench throughput --model facebook/opt-125m --enforce-eager --dataset-name random --max-num-batched-tokens 8192 --input-len 1024 --output-len 50 --num-prompts 32 -tp 1
+vllm serve meta-llama/Llama-3.2-1B -tp 2 --enforce-eager --no-enable-prefix-caching
+vllm bench serve --model meta-llama/Llama-3.2-1B --dataset-name random --sonnet-input-len=1024 --sonnet-output-len=1024 --ignore-eos --num-prompt 2 --trust_remote_code --request-rate inf --backend vllm --port 8000 --save-result --host localhost --port 8123 --append_result --result_filename vllm-test.json
+pre-commit run --all-files
+docker exec -it  vllm-kunshang-xpu-ww11.2 /bin/bash
+docker run -it -d --shm-size 10g --net=host --ipc=host --privileged  -v /mnt/model_cache:/root/.cache/ -v /dev/dri/by-path:/dev/dri/by-path -v /home/kunshang/workspace/:/work  --device /dev/dri:/dev/dri --name=vllm-kunshang-xpu-ww11.2  --entrypoint= gar-registry.caas.intel.com/pytorch/pytorch-ipex-spr:vllm-kernel-0.1.4-py2.12_ww11.2  /bin/bash
+docker build -f docker/Dockerfile.xpu -t vllm-kunshang-image  --shm-size=4g .
+docker build --no-cache --progress=plain -f docker/Dockerfile.xpu -t vllm-kunshang-image  --shm-size=4g .
+uv cache clean

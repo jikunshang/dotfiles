@@ -22,3 +22,46 @@ extract() {
     echo "not a valid file: $1"
   fi
 }
+
+sync_dotfiles_history() {
+  local history_file="${HISTFILE:-$HOME/.zsh_history}"
+  local seed_file="${DOTFILES_ZSH_DIR}/history.seed"
+  local tmp_existing
+  local added_count=0
+
+  if [[ ! -f "$seed_file" ]]; then
+    echo "history seed file not found: $seed_file"
+    return 1
+  fi
+
+  mkdir -p "$(dirname "$history_file")"
+  touch "$history_file"
+
+  tmp_existing="$(mktemp)"
+  awk '
+    {
+      line = $0
+      if (line ~ /^: [0-9]+:[0-9]+;/) {
+        sub(/^: [0-9]+:[0-9]+;/, "", line)
+      }
+      print line
+    }
+  ' "$history_file" | sort -u > "$tmp_existing"
+
+  while IFS= read -r cmd; do
+    [[ -z "$cmd" ]] && continue
+    [[ "$cmd" == '#'* ]] && continue
+
+    if ! grep -Fxq "$cmd" "$tmp_existing"; then
+      printf ': %s:0;%s\n' "$(date +%s)" "$cmd" >> "$history_file"
+      print -r -- "$cmd" >> "$tmp_existing"
+      added_count=$((added_count + 1))
+      if [[ -o interactive ]]; then
+        print -s -- "$cmd"
+      fi
+    fi
+  done < "$seed_file"
+
+  rm -f "$tmp_existing"
+  echo "history sync done: added $added_count command(s)"
+}

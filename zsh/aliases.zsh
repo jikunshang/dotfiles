@@ -21,3 +21,4 @@ alias tn='tmux new -s'
 # Dev helpers
 alias py='python3'
 alias v='vim'
+alias hsync='sync_dotfiles_history'
