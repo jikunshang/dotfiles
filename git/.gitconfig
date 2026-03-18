@@ -1,6 +1,6 @@
 [user]
 	name = Kunshang Ji
-	email = kunshang.ji@intel.com
+	email = jikunshang95@gmail.com
 
 [credential]
 	helper = store
@@ -21,9 +21,6 @@
 [rebase]
 	autoStash = true
 	autoSquash = true
-
-[merge]
-	conflictStyle = zdiff3
 
 [rerere]
 	enabled = true
