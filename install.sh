@@ -14,7 +14,7 @@ usage() {
 Usage: bash install.sh [options]
 
 Options:
-  -g <token>   Set GITHUB_TOKEN in ~/.zsh_secrets
+  -g <token>   Set GH_TOKEN/GITHUB_TOKEN in ~/.zsh_secrets
   -h <token>   Set HF_TOKEN in ~/.zsh_secrets
   -p <proxy>   Set HTTP_PROXY/HTTPS_PROXY in ~/.zsh_secrets and current process
   -u           Install uv (optional, disabled by default)
@@ -65,6 +65,22 @@ escape_for_double_quotes() {
   value="${value//\\/\\\\}"
   value="${value//\"/\\\"}"
   printf '%s' "$value"
+}
+
+run_with_optional_sudo() {
+  if command -v sudo >/dev/null 2>&1; then
+    sudo -E "$@"
+  else
+    "$@"
+  fi
+}
+
+apt_get_update() {
+  run_with_optional_sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+}
+
+apt_get_install() {
+  run_with_optional_sudo env DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y "$@"
 }
 
 upsert_export_var() {
@@ -137,6 +153,7 @@ install_deps() {
       command -v tmux >/dev/null 2>&1 || packages+=(tmux)
       command -v vim >/dev/null 2>&1 || packages+=(vim)
       command -v git >/dev/null 2>&1 || packages+=(git)
+      command -v gh >/dev/null 2>&1 || packages+=(gh)
       command -v wget >/dev/null 2>&1 || packages+=(wget)
       command -v curl >/dev/null 2>&1 || packages+=(curl)
       command -v python3 >/dev/null 2>&1 || packages+=(python)
@@ -167,15 +184,9 @@ install_deps() {
 
       if [[ ${#packages[@]} -gt 0 ]]; then
         echo "[install] Ubuntu deps via apt: ${packages[*]}"
-        if command -v sudo >/dev/null 2>&1; then
-          sudo -E DEBIAN_FRONTEND=noninteractive apt-get update
-          sudo -E DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata
-          sudo -E DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y "${packages[@]}"
-        else
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata
-          DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y "${packages[@]}"
-        fi
+        apt_get_update
+        apt_get_install tzdata
+        apt_get_install "${packages[@]}"
       else
         echo "[ok] dependencies already installed"
       fi
@@ -183,6 +194,50 @@ install_deps() {
 
     *)
       echo "[error] Unsupported OS. Supported: macOS, Ubuntu"
+      exit 1
+      ;;
+  esac
+}
+
+setup_github_cli_apt_repo_if_needed() {
+  local source_list="/etc/apt/sources.list.d/github-cli.list"
+  local keyring_path="/usr/share/keyrings/githubcli-archive-keyring.gpg"
+
+  if [[ -f "$source_list" && -f "$keyring_path" ]]; then
+    echo "[ok] GitHub CLI apt repository already configured"
+    return
+  fi
+
+  echo "[setup] GitHub CLI apt repository"
+  run_with_optional_sudo mkdir -p /usr/share/keyrings
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | run_with_optional_sudo tee "$keyring_path" >/dev/null
+  run_with_optional_sudo chmod go+r "$keyring_path"
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=$keyring_path] https://cli.github.com/packages stable main" \
+    | run_with_optional_sudo tee "$source_list" >/dev/null
+}
+
+install_github_cli_if_needed() {
+  local os="$1"
+
+  if command -v gh >/dev/null 2>&1; then
+    echo "[ok] GitHub CLI already installed"
+    return
+  fi
+
+  case "$os" in
+    macos)
+      echo "[install] GitHub CLI via Homebrew"
+      brew install gh
+      ;;
+    ubuntu)
+      echo "[install] GitHub CLI"
+      setup_github_cli_apt_repo_if_needed
+      apt_get_update
+      apt_get_install gh
+      ;;
+    *)
+      echo "[error] Unsupported OS for GitHub CLI installation: $os"
       exit 1
       ;;
   esac
@@ -241,8 +296,9 @@ apply_cli_values_to_secrets() {
   [[ -f "$target_file" ]] || return
 
   if [[ -n "$GITHUB_TOKEN_VALUE" ]]; then
+    upsert_export_var "$target_file" "GH_TOKEN" "$GITHUB_TOKEN_VALUE"
     upsert_export_var "$target_file" "GITHUB_TOKEN" "$GITHUB_TOKEN_VALUE"
-    echo "[write] GITHUB_TOKEN updated in $target_file"
+    echo "[write] GH_TOKEN/GITHUB_TOKEN updated in $target_file"
   fi
 
   if [[ -n "$HF_TOKEN_VALUE" ]]; then
@@ -321,6 +377,7 @@ main() {
   echo "Detected OS: $os"
 
   install_deps "$os"
+  install_github_cli_if_needed "$os"
 
   install_zsh_if_needed
   install_oh_my_zsh_if_needed
