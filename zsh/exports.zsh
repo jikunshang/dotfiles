@@ -9,8 +9,9 @@ export LC_ALL="en_US.UTF-8"
 export LESS='-R'
 
 # Tokens (real values should be placed in ~/.zsh_secrets)
+export GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 export HF_TOKEN="${HF_TOKEN:-}"
-export GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+export GITHUB_TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
 
 # Network proxy settings
 export HTTP_PROXY="${HTTP_PROXY:-}"
