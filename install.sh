@@ -178,6 +178,87 @@ configure_npm_user_prefix() {
   echo "[ok] npm prefix set to ~/.local"
 }
 
+# Download and install Node.js + npm from official prebuilt binaries to ~/.local.
+# No root/sudo required — works on both Linux and macOS.
+install_nodejs_npm_no_sudo() {
+  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+    echo "[ok] node $(node --version) and npm $(npm --version) already available"
+    return 0
+  fi
+
+  local arch
+  case "$(uname -m)" in
+    x86_64|amd64) arch="x64" ;;
+    aarch64|arm64) arch="arm64" ;;
+    *) echo "[warn] unsupported arch for Node.js, skipping"; return 1 ;;
+  esac
+
+  local platform
+  local ext
+  case "$(uname -s)" in
+    Darwin)
+      platform="darwin"
+      ext="tar.gz"
+      ;;
+    Linux)
+      platform="linux"
+      ext="tar.xz"
+      ;;
+    *)
+      echo "[warn] unsupported OS for Node.js, skipping"
+      return 1
+      ;;
+  esac
+
+  # Node.js LTS
+  local ver="22.12.0"
+  local tarball="node-v${ver}-${platform}-${arch}.${ext}"
+  local url="https://nodejs.org/dist/v${ver}/${tarball}"
+
+  echo "[no-sudo] installing Node.js v${ver} to ~/.local"
+
+  ensure_local_bin
+
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+
+  if ! curl -fsSL "$url" -o "$tmpdir/$tarball"; then
+    echo "[warn] failed to download Node.js from $url, skipping"
+    rm -rf "$tmpdir"
+    return 1
+  fi
+
+  case "$ext" in
+    tar.xz) tar -xJf "$tmpdir/$tarball" -C "$tmpdir" ;;
+    tar.gz) tar -xzf "$tmpdir/$tarball" -C "$tmpdir" ;;
+  esac
+
+  local extracted_dir
+  extracted_dir="$(find "$tmpdir" -maxdepth 1 -type d -name 'node-v*' | head -1)"
+
+  if [[ -z "$extracted_dir" ]]; then
+    echo "[warn] could not find extracted Node.js directory, skipping"
+    rm -rf "$tmpdir"
+    return 1
+  fi
+
+  cp -r "$extracted_dir/"* "$HOME/.local/"
+  rm -rf "$tmpdir"
+
+  # Make sure the newly-installed binaries are discoverable this session
+  export PATH="$HOME/.local/bin:$PATH"
+
+  if command -v node >/dev/null 2>&1; then
+    echo "[ok] node $(node --version) installed to ~/.local/bin"
+    echo "[ok] npm $(npm --version) installed to ~/.local/bin"
+    # Configure npm prefix immediately so global installs don't need sudo
+    configure_npm_user_prefix
+  else
+    echo "[warn] Node.js files copied but ~/.local/bin not in PATH — check your shell config"
+    return 1
+  fi
+}
+
 # ── OS detection ─────────────────────────────────────────────────
 
 upsert_export_var() {
@@ -281,8 +362,11 @@ install_deps() {
         command -v wget >/dev/null 2>&1    || missing+=(wget)
         command -v curl >/dev/null 2>&1    || missing+=(curl)
         command -v python3 >/dev/null 2>&1 || missing+=(python3)
-        command -v node >/dev/null 2>&1    || missing+=(node)
-        command -v npm >/dev/null 2>&1     || missing+=(npm)
+
+        # Node.js / npm: auto-install from official binaries (no sudo needed)
+        if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+          install_nodejs_npm_no_sudo
+        fi
 
         if [[ ${#missing[@]} -gt 0 ]]; then
           echo "[warn] missing system packages (requires admin to install):"
