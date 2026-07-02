@@ -286,6 +286,16 @@ install_claude_code_if_needed() {
   npm install -g @anthropic-ai/claude-code
 }
 
+install_copilot_cli_if_needed() {
+  if gh copilot --version >/dev/null 2>&1; then
+    echo "[ok] GitHub Copilot CLI already installed"
+    return
+  fi
+
+  echo "[install] GitHub Copilot CLI"
+  echo "y" | gh copilot --version >/dev/null 2>&1
+}
+
 setup_zsh_secrets_if_needed() {
   local target_file="$HOME/.zsh_secrets"
   local template_file="$DOTFILES_DIR/zsh/.zsh_secrets.example"
@@ -393,6 +403,7 @@ main() {
   install_github_cli_if_needed "$os"
 
   install_claude_code_if_needed
+  install_copilot_cli_if_needed
 
   install_zsh_if_needed
   install_oh_my_zsh_if_needed
