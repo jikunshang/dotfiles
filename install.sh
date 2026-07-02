@@ -157,6 +157,7 @@ install_deps() {
       command -v wget >/dev/null 2>&1 || packages+=(wget)
       command -v curl >/dev/null 2>&1 || packages+=(curl)
       command -v python3 >/dev/null 2>&1 || packages+=(python)
+      command -v node >/dev/null 2>&1 || packages+=(node)
 
       if ! command -v ifconfig >/dev/null 2>&1; then
         packages+=(inetutils)
@@ -181,6 +182,8 @@ install_deps() {
       dpkg -s net-tools >/dev/null 2>&1 || packages+=(net-tools)
       dpkg -s sudo >/dev/null 2>&1 || packages+=(sudo)
       dpkg -s python3-dev >/dev/null 2>&1 || packages+=(python3-dev)
+      dpkg -s nodejs >/dev/null 2>&1 || packages+=(nodejs)
+      dpkg -s npm >/dev/null 2>&1 || packages+=(npm)
 
       if [[ ${#packages[@]} -gt 0 ]]; then
         echo "[install] Ubuntu deps via apt: ${packages[*]}"
@@ -271,6 +274,16 @@ install_uv_if_needed() {
 
   echo "[install] uv"
   curl -LsSf https://astral.sh/uv/install.sh | sh
+}
+
+install_claude_code_if_needed() {
+  if command -v claude >/dev/null 2>&1; then
+    echo "[ok] Claude Code already installed"
+    return
+  fi
+
+  echo "[install] Claude Code"
+  npm install -g @anthropic-ai/claude-code
 }
 
 setup_zsh_secrets_if_needed() {
@@ -378,6 +391,8 @@ main() {
 
   install_deps "$os"
   install_github_cli_if_needed "$os"
+
+  install_claude_code_if_needed
 
   install_zsh_if_needed
   install_oh_my_zsh_if_needed
