@@ -81,8 +81,9 @@ hsync
 ## Notes
 
 - `install.sh` auto-detects macOS/Ubuntu and installs missing deps.
-- Requested packages are included on Ubuntu: `vim git wget curl net-tools sudo python3-dev nodejs npm` (plus `zsh` and `tmux`). GitHub CLI is also installed automatically.
-- Claude Code is installed automatically via npm (`@anthropic-ai/claude-code`).
+- Requested packages are included on Ubuntu: `vim git wget curl net-tools sudo python3-dev` (plus `zsh` and `tmux`). GitHub CLI is also installed automatically.
+- GitHub Copilot CLI is installed if missing via `curl -fsSL https://gh.io/copilot-install | bash`.
+- Claude Code, Node.js, and npm are not installed automatically, including in `--no-sudo` mode. Existing installations and npm configuration are left unchanged.
 - Ubuntu install runs in non-interactive mode (`DEBIAN_FRONTEND=noninteractive`, `TZ=Etc/UTC`) to avoid timezone prompts.
 - On macOS, equivalent tools are installed via Homebrew (for `net-tools`, it installs `inetutils` if needed), including `gh`.
 - `uv` installation is optional; enable with `-u`.

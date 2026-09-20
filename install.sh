@@ -155,110 +155,6 @@ install_github_binary() {
   echo "[ok] $binary_name installed to ~/.local/bin"
 }
 
-configure_npm_user_prefix() {
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "[warn] npm not found, skipping npm prefix configuration"
-    return 0
-  fi
-
-  local expected="$HOME/.local"
-  local current
-  current="$(npm config get prefix)"
-
-  if [[ "$current" == "$expected" ]]; then
-    echo "[ok] npm prefix already set to ~/.local"
-    return 0
-  fi
-
-  echo "[no-sudo] configuring npm prefix to ~/.local (was: $current)"
-  npm config set prefix "$expected" 2>/dev/null || {
-    echo "[warn] failed to set npm prefix, global installs may require sudo"
-    return 1
-  }
-  echo "[ok] npm prefix set to ~/.local"
-}
-
-# Download and install Node.js + npm from official prebuilt binaries to ~/.local.
-# No root/sudo required — works on both Linux and macOS.
-install_nodejs_npm_no_sudo() {
-  if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
-    echo "[ok] node $(node --version) and npm $(npm --version) already available"
-    return 0
-  fi
-
-  local arch
-  case "$(uname -m)" in
-    x86_64|amd64) arch="x64" ;;
-    aarch64|arm64) arch="arm64" ;;
-    *) echo "[warn] unsupported arch for Node.js, skipping"; return 1 ;;
-  esac
-
-  local platform
-  local ext
-  case "$(uname -s)" in
-    Darwin)
-      platform="darwin"
-      ext="tar.gz"
-      ;;
-    Linux)
-      platform="linux"
-      ext="tar.xz"
-      ;;
-    *)
-      echo "[warn] unsupported OS for Node.js, skipping"
-      return 1
-      ;;
-  esac
-
-  # Node.js LTS
-  local ver="22.12.0"
-  local tarball="node-v${ver}-${platform}-${arch}.${ext}"
-  local url="https://nodejs.org/dist/v${ver}/${tarball}"
-
-  echo "[no-sudo] installing Node.js v${ver} to ~/.local"
-
-  ensure_local_bin
-
-  local tmpdir
-  tmpdir="$(mktemp -d)"
-
-  if ! curl -fsSL "$url" -o "$tmpdir/$tarball"; then
-    echo "[warn] failed to download Node.js from $url, skipping"
-    rm -rf "$tmpdir"
-    return 1
-  fi
-
-  case "$ext" in
-    tar.xz) tar -xJf "$tmpdir/$tarball" -C "$tmpdir" ;;
-    tar.gz) tar -xzf "$tmpdir/$tarball" -C "$tmpdir" ;;
-  esac
-
-  local extracted_dir
-  extracted_dir="$(find "$tmpdir" -maxdepth 1 -type d -name 'node-v*' | head -1)"
-
-  if [[ -z "$extracted_dir" ]]; then
-    echo "[warn] could not find extracted Node.js directory, skipping"
-    rm -rf "$tmpdir"
-    return 1
-  fi
-
-  cp -r "$extracted_dir/"* "$HOME/.local/"
-  rm -rf "$tmpdir"
-
-  # Make sure the newly-installed binaries are discoverable this session
-  export PATH="$HOME/.local/bin:$PATH"
-
-  if command -v node >/dev/null 2>&1; then
-    echo "[ok] node $(node --version) installed to ~/.local/bin"
-    echo "[ok] npm $(npm --version) installed to ~/.local/bin"
-    # Configure npm prefix immediately so global installs don't need sudo
-    configure_npm_user_prefix
-  else
-    echo "[warn] Node.js files copied but ~/.local/bin not in PATH — check your shell config"
-    return 1
-  fi
-}
-
 # ── OS detection ─────────────────────────────────────────────────
 
 upsert_export_var() {
@@ -337,7 +233,6 @@ install_deps() {
       command -v wget >/dev/null 2>&1 || packages+=(wget)
       command -v curl >/dev/null 2>&1 || packages+=(curl)
       command -v python3 >/dev/null 2>&1 || packages+=(python)
-      command -v node >/dev/null 2>&1 || packages+=(node)
 
       if ! command -v ifconfig >/dev/null 2>&1; then
         packages+=(inetutils)
@@ -363,11 +258,6 @@ install_deps() {
         command -v curl >/dev/null 2>&1    || missing+=(curl)
         command -v python3 >/dev/null 2>&1 || missing+=(python3)
 
-        # Node.js / npm: auto-install from official binaries (no sudo needed)
-        if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
-          install_nodejs_npm_no_sudo
-        fi
-
         if [[ ${#missing[@]} -gt 0 ]]; then
           echo "[warn] missing system packages (requires admin to install):"
           printf "       %s\n" "${missing[@]}"
@@ -386,8 +276,6 @@ install_deps() {
         dpkg -s net-tools >/dev/null 2>&1 || packages+=(net-tools)
         dpkg -s sudo >/dev/null 2>&1 || packages+=(sudo)
         dpkg -s python3-dev >/dev/null 2>&1 || packages+=(python3-dev)
-        dpkg -s nodejs >/dev/null 2>&1 || packages+=(nodejs)
-        dpkg -s npm >/dev/null 2>&1 || packages+=(npm)
 
         if [[ ${#packages[@]} -gt 0 ]]; then
           echo "[install] Ubuntu deps via apt: ${packages[*]}"
@@ -501,36 +389,18 @@ install_uv_if_needed() {
   curl -LsSf https://astral.sh/uv/install.sh | sh
 }
 
-# ── Claude Code ──────────────────────────────────────────────────
-
-install_claude_code_if_needed() {
-  if command -v claude >/dev/null 2>&1; then
-    echo "[ok] Claude Code already installed"
-    return
-  fi
-
-  echo "[install] Claude Code"
-
-  if [[ $NO_SUDO -eq 1 ]]; then
-    # In no-sudo mode, ensure npm prefix is set so global install goes to ~/.local
-    configure_npm_user_prefix
-    # Refresh PATH in case ~/.local/bin was just added
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
-
-  npm install -g @anthropic-ai/claude-code
-}
-
 # ── GitHub Copilot CLI ───────────────────────────────────────────
 
 install_copilot_cli_if_needed() {
-  if gh copilot --version >/dev/null 2>&1; then
+  ensure_local_bin
+
+  if command -v copilot >/dev/null 2>&1; then
     echo "[ok] GitHub Copilot CLI already installed"
     return
   fi
 
   echo "[install] GitHub Copilot CLI"
-  echo "y" | gh copilot --version >/dev/null 2>&1
+  curl -fsSL https://gh.io/copilot-install | bash
 }
 
 # ── No-sudo extra CLI tools ──────────────────────────────────────
@@ -658,9 +528,6 @@ install_zoxide_if_needed() {
 install_no_sudo_extras() {
   echo "[no-sudo] installing extra CLI tools to ~/.local/bin ..."
   ensure_local_bin
-
-  # npm prefix must be configured for Claude Code and any future global installs
-  configure_npm_user_prefix
 
   install_fzf_if_needed
   install_ripgrep_if_needed
@@ -799,7 +666,6 @@ main() {
     install_no_sudo_extras
   fi
 
-  install_claude_code_if_needed
   install_copilot_cli_if_needed
 
   install_zsh_if_needed
